@@ -20,6 +20,7 @@ const useTagsViewStore = defineStore(
         )
       },
       addVisitedView(view) {
+        if (view.path === '/index') return
         if (this.visitedViews.some(v => v.path === view.path)) return
         this.visitedViews.push(
           Object.assign({}, view, {
@@ -144,7 +145,7 @@ const useTagsViewStore = defineStore(
             if (i > -1) {
               this.cachedViews.splice(i, 1)
             }
-            if(item.meta.link) {
+            if (item.meta.link) {
               const fi = this.iframeViews.findIndex(v => v.path === item.path)
               this.iframeViews.splice(fi, 1)
             }
@@ -167,7 +168,7 @@ const useTagsViewStore = defineStore(
             if (i > -1) {
               this.cachedViews.splice(i, 1)
             }
-            if(item.meta.link) {
+            if (item.meta.link) {
               const fi = this.iframeViews.findIndex(v => v.path === item.path)
               this.iframeViews.splice(fi, 1)
             }
