@@ -7,6 +7,7 @@ import InnerLink from '@/layout/components/InnerLink'
 
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob('./../../views/**/*.vue')
+const VOTE_HOME_PATH = '/vote/activity'
 
 const usePermissionStore = defineStore(
   'permission',
@@ -36,9 +37,10 @@ const usePermissionStore = defineStore(
         return new Promise(resolve => {
           // 向后端请求路由数据
           getRouters().then(res => {
-            const sdata = JSON.parse(JSON.stringify(res.data))
-            const rdata = JSON.parse(JSON.stringify(res.data))
-            const defaultData = JSON.parse(JSON.stringify(res.data))
+            const voteRoutes = filterVoteRouters(res.data || [])
+            const sdata = JSON.parse(JSON.stringify(voteRoutes))
+            const rdata = JSON.parse(JSON.stringify(voteRoutes))
+            const defaultData = JSON.parse(JSON.stringify(voteRoutes))
             const sidebarRoutes = filterAsyncRouter(sdata)
             const rewriteRoutes = filterAsyncRouter(rdata, false, true)
             const defaultRoutes = filterAsyncRouter(defaultData)
@@ -54,6 +56,25 @@ const usePermissionStore = defineStore(
       }
     }
   })
+
+function filterVoteRouters(routes = []) {
+  return routes
+    .map(route => {
+      const next = { ...route }
+      if (next.children) {
+        next.children = filterVoteRouters(next.children)
+      }
+      const routePath = next.path || ''
+      const component = next.component || ''
+      const keepSelf = routePath === '/vote' || routePath.startsWith('/vote/') || routePath.startsWith('vote') || component.startsWith('vote/')
+      const keepChildren = next.children && next.children.length > 0
+      if (routePath === '/index') {
+        next.redirect = VOTE_HOME_PATH
+      }
+      return keepSelf || keepChildren ? next : null
+    })
+    .filter(Boolean)
+}
 
 // 遍历后台传来的路由字符串，转换为组件对象
 function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
