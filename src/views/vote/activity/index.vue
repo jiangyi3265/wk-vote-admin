@@ -81,17 +81,9 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="需填姓名">
               <el-switch v-model="form.requireName" active-value="1" inactive-value="0" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="同维度重复">
-              <el-switch v-model="form.multiPerPair" active-value="1" inactive-value="0" />
-              <el-tooltip content="开启后，同一候选人的同一维度可被同一人投多票" placement="top">
-                <el-icon style="margin-left:6px;color:#999"><QuestionFilled /></el-icon>
-              </el-tooltip>
             </el-form-item>
           </el-col>
         </el-row>
