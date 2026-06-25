@@ -69,7 +69,7 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="每人票数" prop="votesPerPerson">
-              <el-input-number v-model="form.votesPerPerson" :min="1" :max="100" controls-position="right" />
+              <el-input-number v-model="form.votesPerPerson" :min="1" :max="1" controls-position="right" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -145,7 +145,7 @@ function getList() {
 }
 function cancel() { open.value = false; reset() }
 function reset() {
-  form.value = { activityId: undefined, title: undefined, description: undefined, votesPerPerson: 8, requireName: "1", multiPerPair: "0", status: "0" }
+  form.value = { activityId: undefined, title: undefined, description: undefined, votesPerPerson: 1, requireName: "1", multiPerPair: "0", status: "0" }
   dateRange.value = []
   proxy.resetForm("activityRef")
 }
@@ -168,6 +168,8 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["activityRef"].validate(valid => {
     if (!valid) return
+    form.value.votesPerPerson = 1
+    form.value.multiPerPair = "0"
     form.value.startTime = dateRange.value && dateRange.value[0] ? dateRange.value[0] : null
     form.value.endTime = dateRange.value && dateRange.value[1] ? dateRange.value[1] : null
     const action = form.value.activityId != undefined ? updateActivity : addActivity
