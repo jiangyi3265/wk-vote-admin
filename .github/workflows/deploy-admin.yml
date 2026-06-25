@@ -56,8 +56,12 @@ jobs:
             ln -sfn "$WEB_DIR/releases/${{ github.sha }}" "$WEB_DIR/current"
 
             if command -v nginx >/dev/null 2>&1; then
-              mkdir -p /etc/nginx/conf.d
-              cat > "/etc/nginx/conf.d/wkht.oksja.cn.conf" <<EOF
+              NGINX_CONF_DIR="/etc/nginx/conf.d"
+              if [ -d "/www/server/panel/vhost/nginx" ]; then
+                NGINX_CONF_DIR="/www/server/panel/vhost/nginx"
+              fi
+              mkdir -p "$NGINX_CONF_DIR"
+              cat > "$NGINX_CONF_DIR/wkht.oksja.cn.conf" <<EOF
             server {
                 listen 80;
                 server_name ${DOMAIN};
