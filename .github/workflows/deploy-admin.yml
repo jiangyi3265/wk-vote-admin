@@ -7,9 +7,13 @@ on:
       - master
   workflow_dispatch:
 
+concurrency:
+  group: deploy-admin-web
+  cancel-in-progress: true
+
 env:
-  SERVER_HOST: 101.42.94.41
-  SERVER_USER: root
+  SERVER_HOST: ${{ secrets.SERVER_HOST || '101.42.94.41' }}
+  SERVER_USER: ${{ secrets.SERVER_USER || 'root' }}
   WEB_DIR: /opt/wk-vote/www/admin
   DOMAIN: wkht.oksja.cn
 
@@ -18,18 +22,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Validate secrets
+        env:
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          test -n "$SERVER_PASSWORD" || (echo "Missing secret: SERVER_PASSWORD" && exit 1)
+
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Build
         run: |
-          npm install
+          npm ci
           npm run build:prod
+
+      - name: Prepare remote release
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            set -e
+            rm -rf "${{ env.WEB_DIR }}/releases/${{ github.sha }}"
+            mkdir -p "${{ env.WEB_DIR }}/releases/${{ github.sha }}"
 
       - name: Upload dist
         uses: appleboy/scp-action@v0.1.7
@@ -52,7 +73,6 @@ jobs:
             WEB_DIR="${{ env.WEB_DIR }}"
             DOMAIN="${{ env.DOMAIN }}"
 
-            mkdir -p "$WEB_DIR/releases"
             ln -sfn "$WEB_DIR/releases/${{ github.sha }}" "$WEB_DIR/current"
 
             if command -v nginx >/dev/null 2>&1; then
