@@ -40,27 +40,19 @@ jobs:
         run: |
           npm install
           npm run build:prod
+          tar -czf admin-dist.tar.gz -C dist .
 
-      - name: Prepare remote release
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ env.SERVER_HOST }}
-          username: ${{ env.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          script: |
-            set -e
-            rm -rf "${{ env.WEB_DIR }}/releases/${{ github.sha }}"
-            mkdir -p "${{ env.WEB_DIR }}/releases/${{ github.sha }}"
-
-      - name: Upload dist
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.SERVER_HOST }}
-          username: ${{ env.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          source: dist/*
-          target: ${{ env.WEB_DIR }}/releases/${{ github.sha }}
-          strip_components: 1
+      - name: Upload dist archive
+        env:
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+          export SSHPASS="$SERVER_PASSWORD"
+          TMP_DIR="/tmp/wk-vote-admin-${{ github.sha }}"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          sshpass -e ssh $SSH_OPTS "${SERVER_USER}@${SERVER_HOST}" "rm -rf '${TMP_DIR}' && mkdir -p '${TMP_DIR}'"
+          sshpass -e scp $SSH_OPTS admin-dist.tar.gz "${SERVER_USER}@${SERVER_HOST}:${TMP_DIR}/dist.tar.gz"
 
       - name: Activate release and nginx
         uses: appleboy/ssh-action@v1.0.3
@@ -72,8 +64,13 @@ jobs:
             set -e
             WEB_DIR="${{ env.WEB_DIR }}"
             DOMAIN="${{ env.DOMAIN }}"
+            TMP_DIR="/tmp/wk-vote-admin-${{ github.sha }}"
+            RELEASE_DIR="$WEB_DIR/releases/${{ github.sha }}"
 
-            ln -sfn "$WEB_DIR/releases/${{ github.sha }}" "$WEB_DIR/current"
+            rm -rf "$RELEASE_DIR"
+            mkdir -p "$RELEASE_DIR"
+            tar -xzf "$TMP_DIR/dist.tar.gz" -C "$RELEASE_DIR"
+            ln -sfn "$RELEASE_DIR" "$WEB_DIR/current"
 
             if command -v nginx >/dev/null 2>&1; then
               NGINX_CONF_DIR="/etc/nginx/conf.d"
@@ -107,3 +104,4 @@ jobs:
             else
               echo "nginx is not installed, skipped nginx config"
             fi
+            rm -rf "$TMP_DIR"
