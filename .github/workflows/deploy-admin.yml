@@ -38,7 +38,7 @@ jobs:
 
       - name: Build
         run: |
-          npm ci
+          npm install
           npm run build:prod
 
       - name: Prepare remote release
